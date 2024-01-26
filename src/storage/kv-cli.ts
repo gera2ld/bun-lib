@@ -6,6 +6,7 @@ import { dirname, join } from 'node:path';
 import { temporaryFileTask } from 'tempy';
 import { ensureEnv } from '../env';
 import { KvDatabase } from './kv';
+import { runCommand } from '../cli';
 
 interface GlobalOptions {
   path: string;
@@ -72,9 +73,7 @@ cli
     await temporaryFileTask(
       async (temp: string) => {
         await Bun.write(temp, value);
-        Bun.spawnSync([ensureEnv('EDITOR'), temp], {
-          stdio: ['inherit', 'inherit', 'inherit'],
-        });
+        await runCommand([ensureEnv('EDITOR'), temp]);
         const newValue = await Bun.file(temp).text();
         kv.set(key, newValue);
       },
