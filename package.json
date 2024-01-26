@@ -1,0 +1,14 @@
+{
+  "name": "bun-lib",
+  "type": "module",
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "cac": "^6.7.14",
+    "tempy": "^3.1.0"
+  }
+}
