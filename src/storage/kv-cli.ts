@@ -4,9 +4,9 @@ import { cac } from 'cac';
 import { mkdir, readdir } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { temporaryFileTask } from 'tempy';
+import { runCommand } from '../cli';
 import { ensureEnv } from '../env';
 import { KvDatabase } from './kv';
-import { runCommand } from '../cli';
 
 interface GlobalOptions {
   path: string;
@@ -73,7 +73,7 @@ cli
     await temporaryFileTask(
       async (temp: string) => {
         await Bun.write(temp, value);
-        await runCommand([ensureEnv('EDITOR'), temp]);
+        await runCommand([ensureEnv('EDITOR'), temp]).spawn();
         const newValue = await Bun.file(temp).text();
         kv.set(key, newValue);
       },

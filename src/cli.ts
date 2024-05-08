@@ -4,13 +4,32 @@ export function runCommand(
   args: string[],
   opts?: Partial<SpawnOptions.OptionsObject>,
 ) {
-  return new Promise<void>((resolve, reject) => {
-    Bun.spawn(args, {
-      stdio: ['inherit', 'inherit', 'inherit'],
-      ...opts,
-      onExit(_child, exitCode) {
-        (exitCode ? reject : resolve)();
-      },
-    });
+  const proc = Bun.spawn(args, {
+    stdio: ['ignore', 'inherit', 'inherit'],
+    ...opts,
   });
+  const validateResult = () => {
+    if (proc.exitCode) {
+      throw new Error(`Exit code: ${proc.exitCode}`);
+    }
+  };
+  return {
+    async output(ensureSuccess = true) {
+      const code = await proc.exited;
+      if (ensureSuccess) validateResult();
+      const stdout = await new Response(proc.stdout).text();
+      const stderr = await new Response(proc.stderr).text();
+      return {
+        code,
+        success: !code,
+        stdout,
+        stderr,
+      };
+    },
+    async spawn(ensureSuccess = true) {
+      const code = await proc.exited;
+      if (ensureSuccess) validateResult();
+      return code;
+    },
+  };
 }
