@@ -1,16 +1,16 @@
 import type { SpawnOptions } from 'bun';
 
-export function runCommand(
+export async function runCommand(
   args: string[],
   opts?: Partial<SpawnOptions.OptionsObject>,
 ) {
-  return new Promise<void>((resolve, reject) => {
-    Bun.spawn(args, {
-      stdio: ['inherit', 'inherit', 'inherit'],
-      ...opts,
-      onExit(_child, exitCode) {
-        (exitCode ? reject : resolve)();
-      },
-    });
+  const proc = Bun.spawn(args, {
+    stdio: ['ignore', 'inherit', 'inherit'],
+    ...opts,
   });
+  await proc.exited;
+  if (proc.exitCode) {
+    throw new Error(`Exit code: ${proc.exitCode}`);
+  }
+  return proc;
 }
