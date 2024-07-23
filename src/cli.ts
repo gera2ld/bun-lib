@@ -1,5 +1,11 @@
 import type { SpawnOptions } from 'bun';
 
+export class CommandError extends Error {
+  constructor(code: number) {
+    super(`Command exit code: ${code}`);
+  }
+}
+
 export function runCommand(
   args: string[],
   opts?: Partial<SpawnOptions.OptionsObject>,
@@ -10,7 +16,7 @@ export function runCommand(
   });
   const validateResult = () => {
     if (proc.exitCode) {
-      throw new Error(`Exit code: ${proc.exitCode}`);
+      throw new CommandError(proc.exitCode);
     }
   };
   return {
