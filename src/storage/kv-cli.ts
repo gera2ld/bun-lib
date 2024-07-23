@@ -1,6 +1,6 @@
 #!/usr/bin/env -S bun run
 
-import { cac } from 'cac';
+import { program } from 'commander';
 import { mkdir, readdir } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { temporaryFileTask } from 'tempy';
@@ -12,11 +12,6 @@ interface GlobalOptions {
   path: string;
 }
 
-function showHelpAndThrow() {
-  cli.outputHelp();
-  process.exit(1);
-}
-
 async function openKv(path: string) {
   const dir = dirname(path);
   await mkdir(dir, { recursive: true });
@@ -24,26 +19,21 @@ async function openKv(path: string) {
   return kv;
 }
 
-const cli = cac('kv');
-cli.option('--path <path>', 'Set path of database', {
-  default: 'kv.db',
-});
-cli.help();
-cli.command('').action(showHelpAndThrow);
+program.name('kv');
+program.option('--path <path>', 'Set path of database', 'kv.db');
 
-// Unknown command
-cli.on('command:*', showHelpAndThrow);
-
-cli
-  .command('get <key>', 'Show the value of a key')
+program
+  .command('get <key>')
+  .description('Show the value of a key')
   .action(async (key: string, options: GlobalOptions) => {
     const kv = await openKv(options.path);
     const value = kv.get(key) || '';
     console.log(value);
   });
 
-cli
-  .command('set <key> [value]', 'Set the value of a key')
+program
+  .command('set <key> [value]')
+  .description('Set the value of a key')
   .action(
     async (key: string, value: string | undefined, options: GlobalOptions) => {
       const kv = await openKv(options.path);
@@ -53,20 +43,25 @@ cli
     },
   );
 
-cli
-  .command('del <key>', 'Delete a key')
+program
+  .command('del <key>')
+  .description('Delete a key')
   .action(async (key: string, options: GlobalOptions) => {
     const kv = await openKv(options.path);
     kv.del(key);
   });
 
-cli.command('keys', 'List all keys').action(async (options: GlobalOptions) => {
-  const kv = await openKv(options.path);
-  console.log(kv.keys().join('\n'));
-});
+program
+  .command('keys')
+  .description('List all keys')
+  .action(async (options: GlobalOptions) => {
+    const kv = await openKv(options.path);
+    console.log(kv.keys().join('\n'));
+  });
 
-cli
-  .command('edit <key>', 'Edit the value of a key with $EDITOR')
+program
+  .command('edit <key>')
+  .description('Edit the value of a key with $EDITOR')
   .action(async (key: string, options: GlobalOptions) => {
     const kv = await openKv(options.path);
     const value = kv.get(key) || '';
@@ -83,8 +78,9 @@ cli
     );
   });
 
-cli
-  .command('import <source>', 'Import data from a directory')
+program
+  .command('import <source>')
+  .description('Import data from a directory')
   .action(async (source: string, options: GlobalOptions) => {
     const kv = await openKv(options.path);
     for (const entry of await readdir(source)) {
@@ -93,11 +89,10 @@ cli
     }
   });
 
-cli
-  .command('export', 'Export all data to a directory')
-  .option('-o, --outdir <outdir>', 'Output directory', {
-    default: 'kv-data',
-  })
+program
+  .command('export')
+  .description('Export all data to a directory')
+  .option('-o, --outdir <outdir>', 'Output directory', 'kv-data')
   .action(async (options: GlobalOptions & { outdir: string }) => {
     await mkdir(options.outdir, { recursive: true });
     const kv = await openKv(options.path);
@@ -107,4 +102,4 @@ cli
     console.log(`Data exported to ${options.outdir}`);
   });
 
-cli.parse();
+program.parse();
