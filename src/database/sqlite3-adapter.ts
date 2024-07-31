@@ -1,6 +1,22 @@
-import { Database } from 'bun:sqlite';
+import { Database, Statement } from 'bun:sqlite';
 
 export type IPrimaryData = string | number | bigint | boolean | Uint8Array;
+
+class SqliteStatement<T> {
+  constructor(private statement: Statement<T>) {}
+
+  get(...params: any[]) {
+    return this.statement.get(...params) || undefined;
+  }
+
+  all(...params: any[]) {
+    return this.statement.all(...params);
+  }
+
+  values(...params: any[]) {
+    return this.statement.values(...params);
+  }
+}
 
 export class SqliteAdapter {
   private db: Database;
@@ -13,15 +29,23 @@ export class SqliteAdapter {
     this.db.run(sql, params);
   }
 
-  queryRow<T>(sql: string, ...params: any[]): T | undefined {
-    return this.db.query<T, any[]>(sql).get(...params) || undefined;
+  transaction(cb: () => void) {
+    this.db.transaction(cb)();
   }
 
-  queryRows<T>(sql: string, ...params: any[]): T[] {
-    return this.db.query<T, any[]>(sql).all(...params);
+  prepare<T>(sql: string) {
+    return new SqliteStatement(this.db.query<T, any[]>(sql));
+  }
+
+  queryRow<T>(sql: string, ...params: any[]) {
+    return this.prepare<T>(sql).get(...params);
+  }
+
+  queryRows<T>(sql: string, ...params: any[]) {
+    return this.prepare<T>(sql).all(...params);
   }
 
   queryValues(sql: string, ...params: any[]): IPrimaryData[][] {
-    return this.db.query(sql).values(...params);
+    return this.prepare(sql).values(...params);
   }
 }
