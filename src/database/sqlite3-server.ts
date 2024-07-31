@@ -1,15 +1,14 @@
 import { Database } from 'bun:sqlite';
-import { cac } from 'cac';
+import { program } from 'commander';
 
-const cli = cac('sqlite3-server');
-cli.help();
-cli
-  .command('<file>')
-  .option('--port <port>', 'Port to listen', { default: 3601 })
+program.name('sqlite3-server');
+program
+  .argument('<file>')
+  .option('--port <port>', 'Port to listen', '3601')
   .option('--no-readonly', 'Allow changes to the database')
-  .action((file: string, options: { port: number; readonly: boolean }) => {
-    Bun.serve({
-      port: options.port,
+  .action((file: string, options: { port: string; readonly: boolean }) => {
+    const server = Bun.serve({
+      port: +options.port,
       async fetch(request) {
         if (request.method !== 'POST') {
           return new Response(null, { status: 404 });
@@ -41,5 +40,6 @@ cli
         }
       },
     });
+    console.log(`Listening at ${server.url}`);
   });
-cli.parse();
+program.parse();
